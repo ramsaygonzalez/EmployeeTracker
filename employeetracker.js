@@ -69,3 +69,30 @@ function runTracker() {
       }
     });
 }
+// function to handle posting new departments
+function addDepartment() {
+  // prompt for info about the department being added
+  inquirer
+    .prompt([
+      {
+        name: "name",
+        type: "input",
+        message: "What is the name of the department you want to add?"
+      },
+    ])
+    .then(function (answer) {
+      // when finished prompting, insert a new department into the db with that info
+      connection.query(
+        "INSERT INTO departments SET ?",
+        {
+          name: answer.name
+        },
+        function (err) {
+          if (err) throw err;
+          console.log("Your department was created successfully!");
+          // re-prompt the user for desired action
+          runTracker();
+        }
+      );
+    });
+}
