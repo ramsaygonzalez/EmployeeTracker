@@ -1,5 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+const cTable = require('console.table')
 
 var connection = mysql.createConnection({
   host: "localhost",
@@ -31,10 +32,10 @@ function runTracker() {
         "Add a department",
         "Add a role",
         "Add an employee",
-        "View departments",
-        "View roles",
-        "View employees",
-        "Update employee role"
+        "View all departments",
+        "View all roles",
+        "View all employees",
+        "Update an employee role"
       ]
     })
     .then(function (answer) {
@@ -63,7 +64,7 @@ function runTracker() {
           viewEmployees();
           break;
 
-        case "Update employee role":
+        case "Update an employee role":
           updateRole();
           break;
       }
@@ -137,7 +138,7 @@ function addRole() {
           }
         }
 
-        console.log(answer);
+        // console.log(answer);
 
         connection.query(
           "INSERT INTO roles SET ?",
@@ -156,5 +157,106 @@ function addRole() {
         );
       }
       );
+  });
+}
+
+function addEmployee() {
+  // query the database for all roles
+  connection.query("SELECT * FROM roles", function (err, results) {
+    if (err) throw err;
+    // console.log(results)
+    // once you have the items, prompt the user for which they'd like to bid on
+    inquirer
+      .prompt([
+        {
+          name: "first_name",
+          type: "input",
+          message: "What is the first name of the employee?"
+        },
+        {
+          name: "last_name",
+          type: "input",
+          message: "What is the last name of the employee?"
+        },
+        {
+          name: "choice",
+          type: "rawlist",
+          choices: function () {
+            var choiceArray = [];
+            for (var i = 0; i < results.length; i++) {
+              choiceArray.push({ name: results[i].title, value: results[i].role_ID });
+            }
+            return choiceArray;
+          },
+          message: "What role does this employee have?"
+        }
+      ])
+      .then(function (answer) {
+        // get the information of the chosen item
+        var chosenItem;
+        for (var i = 0; i < results.length; i++) {
+          if (results[i].role_ID === answer.choice) {
+            chosenItem = results[i];
+          }
+        }
+
+        // console.log(answer);
+
+        connection.query(
+          "INSERT INTO employees SET ?",
+          [
+            {
+              first_name: answer.first_name,
+              last_name: answer.last_name,
+              role_ID: chosenItem.role_ID
+            }
+          ],
+          function (error) {
+            if (error) throw err;
+            console.log("Employee added successfully!");
+            runTracker();
+          }
+        );
+      }
+      );
+  });
+}
+
+function updateRole() {
+
+}
+
+function viewDepartments() {
+  console.log("Selecting all departments...\n");
+  connection.query("SELECT * FROM departments", function (err, res) {
+    if (err) throw err;
+    // Log all results of the SELECT statement
+    const table = cTable.getTable(res)
+
+    console.log(table);
+    runTracker();
+  });
+}
+
+function viewRoles() {
+  console.log("Selecting all roles...\n");
+  connection.query("SELECT roles.title As Role, departments.name AS Department, roles.salary As Salary FROM roles LEFT JOIN departments on roles.department_ID = departments.department_ID;", function (err, res) {
+    if (err) throw err;
+    // Log all results of the SELECT statement
+    const table = cTable.getTable(res)
+
+    console.log(table);
+    runTracker();
+  });
+}
+
+function viewEmployees() {
+  console.log("Selecting all employees...\n");
+  connection.query("SELECT employees.employee_ID As Employee_ID, employees.first_name As First_Name, employees.last_name As Last_Name, departments.name As Department, roles.title As Role, roles.salary As Salary FROM employees LEFT JOIN roles on roles.role_ID = employees.role_ID LEFT JOIN departments on roles.department_ID = departments.department_ID;", function (err, res) {
+    if (err) throw err;
+    // Log all results of the SELECT statement
+    const table = cTable.getTable(res)
+    console.log(table);
+    runTracker();
   });
 }
