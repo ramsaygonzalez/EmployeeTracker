@@ -121,7 +121,7 @@ function addRole() {
           choices: function () {
             var choiceArray = [];
             for (var i = 0; i < results.length; i++) {
-              choiceArray.push(results[i].department_ID);
+              choiceArray.push({ name: results[i].name, value: results[i].department_ID });
             }
             return choiceArray;
           },
