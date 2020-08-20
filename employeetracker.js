@@ -96,3 +96,65 @@ function addDepartment() {
       );
     });
 }
+
+
+function addRole() {
+  // query the database for all departments
+  connection.query("SELECT * FROM departments", function (err, results) {
+    if (err) throw err;
+    // once you have the items, prompt the user for which they'd like to bid on
+    inquirer
+      .prompt([
+        {
+          name: "title",
+          type: "input",
+          message: "What is the title of this role?"
+        },
+        {
+          name: "salary",
+          type: "input",
+          message: "What is the salary of this role?"
+        },
+        {
+          name: "choice",
+          type: "rawlist",
+          choices: function () {
+            var choiceArray = [];
+            for (var i = 0; i < results.length; i++) {
+              choiceArray.push(results[i].department_ID);
+            }
+            return choiceArray;
+          },
+          message: "What department would you like to add?"
+        }
+      ])
+      .then(function (answer) {
+        // get the information of the chosen item
+        var chosenItem;
+        for (var i = 0; i < results.length; i++) {
+          if (results[i].department_ID === answer.choice) {
+            chosenItem = results[i];
+          }
+        }
+
+        console.log(answer);
+
+        connection.query(
+          "INSERT INTO roles SET ?",
+          [
+            {
+              title: answer.title,
+              salary: answer.salary,
+              department_ID: chosenItem.department_ID
+            }
+          ],
+          function (error) {
+            if (error) throw err;
+            console.log("Role added successfully!");
+            runTracker();
+          }
+        );
+      }
+      );
+  });
+}
