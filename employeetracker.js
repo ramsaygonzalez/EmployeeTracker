@@ -2,6 +2,8 @@ var mysql = require("mysql");
 var inquirer = require("inquirer");
 const cTable = require('console.table')
 
+require('dotenv').config()
+
 var connection = mysql.createConnection({
   host: "localhost",
 
@@ -12,7 +14,7 @@ var connection = mysql.createConnection({
   user: "root",
 
   // Your password
-  password: "Rg1410050!",
+  password: process.env.mysqlPassword,
   database: "employeeTrackerDB"
 });
 
@@ -223,7 +225,68 @@ function addEmployee() {
 }
 
 function updateRole() {
+  // query the database for all roles
+  connection.query("SELECT * FROM employees", function (err, employees) {
+    if (err) throw err;
 
+    connection.query("SELECT * FROM roles", function (err, roles) {
+      if (err) throw err;
+
+      // once you have the items, prompt the user for which they'd like to bid on
+      inquirer
+        .prompt([
+          {
+            name: "employeeChoice",
+            type: "rawlist",
+            choices: function () {
+              var empChoiceArray = [];
+              for (var i = 0; i < employees.length; i++) {
+                empChoiceArray.push({ name: employees[i].last_name + ", " + employees[i].first_name, value: employees[i].employee_ID });
+              }
+              return empChoiceArray;
+            },
+            message: "What employee needs role updated?"
+          },
+          {
+            name: "roleChoice",
+            type: "rawlist",
+            choices: function () {
+              var rolChoiceArray = [];
+              for (var i = 0; i < roles.length; i++) {
+                rolChoiceArray.push({ name: roles[i].title, value: roles[i].role_ID });
+              }
+              return rolChoiceArray;
+            },
+            message: "What is the new role for this employee?"
+          }
+        ])
+        .then(function (answer) {
+
+          var role = parseInt(answer.roleChoice)
+          var employee = parseInt(answer.employeeChoice)
+          console.log(role);
+          console.log(employee);
+
+          connection.query(
+            "UPDATE employees SET ? Where ?",
+            [
+              {
+                role_ID: role
+              },
+              {
+                employee_ID: employee
+              }
+            ],
+            function (error) {
+              if (error) throw err;
+              console.log("Role updated successfully!");
+              runTracker();
+            }
+          );
+        }
+        );
+    });
+  });
 }
 
 function viewDepartments() {
